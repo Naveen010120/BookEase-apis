@@ -39,7 +39,7 @@ function getUserDataFromReq(req){
 
 app.use(cors({
     credentials: true,
-    origin: 'https://book-ease-project-7d56p16m0-naveen-singhs-projects-4cb555d5.vercel.app/',
+    origin: 'https://book-ease-project.vercel.app',
 }))
 app.get('/test', (req, res) => {
     // console.log(process.env.MONGO_URL)
