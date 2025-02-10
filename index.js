@@ -25,7 +25,7 @@ require('dotenv').config();
 app.use(express.json());
 app.use(cookieParser());
 app.use('/uploads',express.static(__dirname+'/uploads'))
-mongoose.connect(process.env.MONGO_URL).then(()=>console.log("database connectd")).catch((error)=>console.log({error: "database not connected",error: error}))
+mongoose.connect(process.env.MONGO_URL).then(()=>console.log("database connetd")).catch((error)=>console.log({error: "database not connected",error: error}))
 
 function getUserDataFromReq(req){
   return new Promise((resolve,reject)=>{
@@ -39,7 +39,7 @@ function getUserDataFromReq(req){
 
 app.use(cors({
     credentials: true,
-    origin: 'http://localhost:5173',
+    origin: 'https://book-ease-project.vercel.app/',
 }))
 app.get('/test', (req, res) => {
     // console.log(process.env.MONGO_URL)
@@ -210,4 +210,4 @@ app.get('/bookings',async(req,res)=>{
   res.json(await BookingModel.find({user:userData.id}).populate('place'))
 })
 const port = 4000
-app.listen(port || 4000, ()=>console.log(`http://localhost:${port}`))
+app.listen(port || 4000, ()=>console.log(`https://bookease-apis.onrender.com`))
