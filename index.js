@@ -85,7 +85,11 @@ app.post('/login',async(req,res)=>{
       },jwtSecret,{},(err,token)=>{
         if(err) throw err;
 
-        res.cookie('token',token).json(userDoc)
+        res.cookie('token',token, {
+          httpOnly: true,
+          secure: true,  // Important for HTTPS
+          sameSite: 'None'}
+        ).json(userDoc)
       })
     } else {
       res.status(422).json('pass not ok');
