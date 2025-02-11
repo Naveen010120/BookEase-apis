@@ -22,6 +22,10 @@ let imageDownloader=require('image-downloader');
 //hidden the url
 require('dotenv').config();
 
+app.use(cors({
+  credentials: true,
+  origin:[ 'https://book-ease-project.vercel.app', "http://localhost:5173"]
+}))
 app.use(express.json());
 app.use(cookieParser());
 app.use('/uploads',express.static(__dirname+'/uploads'))
@@ -37,10 +41,7 @@ function getUserDataFromReq(req){
  
 }
 
-app.use(cors({
-    credentials: true,
-    origin:[ 'https://book-ease-project.vercel.app', "http://localhost:5173"]
-}))
+
 app.get('/test', (req, res) => {
     // console.log(process.env.MONGO_URL)
     res.json('test ok');
