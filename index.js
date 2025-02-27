@@ -32,7 +32,7 @@ require('dotenv').config();
 
 app.use(cors({
   credentials: true,
-  origin:[ 'https://book-ease-project.vercel.app', "http://localhost:5173"]
+  origin:[ 'https://book-ease-project.vercel.app', "http://localhost:5175"]
 }))
 app.use(express.json());
 app.use(cookieParser());
@@ -57,13 +57,14 @@ app.get('/test', (req, res) => {
 })
 app.post('/register', async (req, res) => {
     mongoose.connect(process.env.MONGO_URL);
-    const {name,email,password} = req.body;
-  
+    const {name,email,password,role} = req.body;
+      console.log(role)
     try {
       const userDoc = await User.create({
         name,
         email,
         password:bcrypt.hashSync(password, 10),
+        role
       });
       res.json(userDoc);
     } catch (e) {
@@ -72,8 +73,9 @@ app.post('/register', async (req, res) => {
 });
 
 app.post('/login',async(req,res)=>{
-  const {email,password} = req.body;
+  const {email,password,} = req.body;
   const userDoc = await User.findOne({email});
+
   if (userDoc) {
     const passOk = bcrypt.compareSync(password, userDoc.password);
     if (passOk) {
@@ -81,10 +83,11 @@ app.post('/login',async(req,res)=>{
       jwt.sign({
         email:userDoc.email,
         id:userDoc._id,
+        role:userDoc.role
     
       },jwtSecret,{},(err,token)=>{
         if(err) throw err;
-
+        console.log(token)
         res.cookie('token',token, {
           httpOnly: true,
           secure: true,  // Important for HTTPS
@@ -104,8 +107,8 @@ app.get('/profile',(req,res)=>{
   if(token){
     jwt.verify(token,jwtSecret,{},async(err,userData)=>{
       if(err) throw err;
-      let {name,email,_id}=await User.findById(userData.id)
-      res.json({name,email,_id});
+      let {name,email,_id,role}=await User.findById(userData.id)
+      res.json({name,email,_id,role});
     })
   }else{
     res.json(null);
@@ -150,9 +153,12 @@ app.post('/upload', photosMiddleware.array('photos', 100), (req, res) => {
 });
 
 
-app.post('/places',(req,res)=>{
+app.post('/places',async(req,res)=>{
   let {token}=req.cookies;
   let{title,address,addedPhotos,description,perks,extraInfo,checkIn,checkOut,maxGuests,price}=req.body;
+  let existingData=await Place.find({})
+  let filterData=existingData.filter(place=>place.title==title)
+ if(filterData){
   jwt.verify(token,jwtSecret,{},async(err,userData)=>{
     if(err) throw err;
    
@@ -165,6 +171,9 @@ app.post('/places',(req,res)=>{
     res.json(placeDoc)
 
   })
+}else{
+  res.json('place already exist')
+}
 })
 app.get('/user-places',(req,res)=>{
   let {token}=req.cookies;
