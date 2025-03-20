@@ -32,7 +32,7 @@ require('dotenv').config();
 
 app.use(cors({
   credentials: true,
-  origin:[ 'https://book-ease-project.vercel.app', "http://localhost:5175"]
+  origin:[ 'https://book-ease-project.vercel.app', "http://localhost:5173"]
 }))
 app.use(express.json());
 app.use(cookieParser());
@@ -56,51 +56,92 @@ app.get('/test', (req, res) => {
     console.log('test ok')
 })
 app.post('/register', async (req, res) => {
-    mongoose.connect(process.env.MONGO_URL);
-    const {name,email,password,role} = req.body;
-      console.log(role)
-    try {
+  const { name, email, password, role } = req.body;
+
+  try {
+      // Validate request body manually before creating the user
+      if (!name || !email || !password) {
+          return res.status(400).json({ error: 'All fields are required' });
+      }
+
+      // Check if the email already exists
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+          return res.status(409).json({ error: 'Email already in use' });
+      }
+
+      // Create new user with hashed password
       const userDoc = await User.create({
-        name,
-        email,
-        password:bcrypt.hashSync(password, 10),
-        role
+          name,
+          email,
+          password: bcrypt.hashSync(password, 10),
+          role
       });
-      res.json(userDoc);
-    } catch (e) {
-      res.status(422).json(e);
-    }
+
+      res.status(201).json(userDoc);
+
+  } catch (e) {
+      // Handle validation errors
+      if (e.name === 'ValidationError') {
+          const errors = Object.values(e.errors).map(err => err.message);
+          return res.status(400).json({ error: errors });
+      }
+
+      res.status(500).json({ error: 'Something went wrong' });
+  }
 });
 
-app.post('/login',async(req,res)=>{
-  const {email,password,} = req.body;
-  const userDoc = await User.findOne({email});
+app.post('/login', async (req, res) => {
+  const { email, password } = req.body;
 
-  if (userDoc) {
-    const passOk = bcrypt.compareSync(password, userDoc.password);
-    if (passOk) {
-      console.log('ok')
-      jwt.sign({
-        email:userDoc.email,
-        id:userDoc._id,
-        role:userDoc.role
-    
-      },jwtSecret,{},(err,token)=>{
-        if(err) throw err;
-        console.log(token)
-        res.cookie('token',token, {
-          httpOnly: true,
-          secure: true,  // Important for HTTPS
-          sameSite: 'None'}
-        ).json(userDoc)
-      })
-    } else {
-      res.status(422).json('pass not ok');
+  try {
+    // 🔍 Check if the user exists
+    const userDoc = await User.findOne({ email });
+
+    if (!userDoc) {
+      return res.status(404).json({ error: 'User not found' });
     }
-  } else {
-    res.json('not found');
+
+    // 🔒 Verify password
+    const isPasswordValid = await bcrypt.compare(password, userDoc.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: 'Invalid password' });
+    }
+
+    // 🔑 Generate JWT Token
+    const token = jwt.sign(
+      { id: userDoc._id, email: userDoc.email },
+      jwtSecret,
+      { expiresIn: '1h' }
+    );
+
+    // 🍪 Set cookie with token
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: true,        // For HTTPS environments
+      sameSite: 'None',     // For cross-origin requests
+      maxAge: 3600000,      // 1 hour
+    });
+
+    // ✅ Send success response
+    res.status(200).json({
+      message: 'Login successful',
+      user: {
+        id: userDoc._id,
+        email: userDoc.email,
+        name: userDoc.name,
+      },
+      token,
+    });
+   
+
+
+  } catch (err) {
+    console.error('Server error:', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
-})
+});
+
 
 app.get('/profile',(req,res)=>{
   let {token}=req.cookies;
@@ -233,3 +274,4 @@ app.get('/bookings',async(req,res)=>{
 })
 const port = 4000
 app.listen(port || 4000, ()=>console.log(`https://bookease-apis.onrender.com`))
+// `https://bookease-apis.onrender.com
