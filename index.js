@@ -8,9 +8,8 @@ let multer=require('multer');
 //files
 let fs=require('fs')
 let path=require('path')
-//bcrypt
+let jwtSecret=process.env.JWT_SECRET;
 let bcrypt = require('bcrypt');
-let jwtSecret='akjnil32ojkqliowilnkaods89'
 //connections
 const mongoose = require('mongoose');
 const User = require('./Models/User.js');
@@ -50,10 +49,11 @@ function getUserDataFromReq(req){
 }
 
 
-app.get('/test', (req, res) => {
+app.get('/test', async(req, res) => {
     // console.log(process.env.MONGO_URL)
-    res.json('test ok');
-    console.log('test ok')
+    let loginUser = await User.find()
+    res.json(loginUser);
+    console.log('test ok', loginUser);
 })
 app.post('/register', async (req, res) => {
   const { name, email, password, role } = req.body;
@@ -249,10 +249,6 @@ app.put('/places',async(req,res)=>{
   })
 })
 
-app.get('/places',async(req,res)=>{
-  res.json(await Place.find())
-})
-
 app.post('/bookings',async(req,res)=>{
   let userData=await getUserDataFromReq(req)
   const {place,checkIn,checkOut,numberOfGuests,name,phone,price}=req.body;
@@ -272,6 +268,6 @@ app.get('/bookings',async(req,res)=>{
   let userData=await getUserDataFromReq(req);
   res.json(await BookingModel.find({user:userData.id}).populate('place'))
 })
-const port = 4000
-app.listen(port || 4000, ()=>console.log(`https://bookease-apis.onrender.com`))
+const port = process.env.PORT || 4000
+app.listen(port || 4000, ()=>console.log(`Server running on port  ${port}`))
 // `https://bookease-apis.onrender.com
