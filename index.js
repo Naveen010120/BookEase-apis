@@ -8,7 +8,6 @@ let multer=require('multer');
 //files
 let fs=require('fs')
 let path=require('path')
-let jwtSecret=process.env.JWT_SECRET;
 let bcrypt = require('bcrypt');
 //connections
 const mongoose = require('mongoose');
@@ -21,6 +20,7 @@ let imageDownloader=require('image-downloader');
 //hidden the url
 require('dotenv').config();
 
+let jwtSecret=process.env.JWT_SECRET;
 // app.use((req, res, next) => {
 //   res.header("Access-Control-Allow-Origin", "https://book-ease-project.vercel.app, http://localhost:5173");
 //   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
@@ -97,6 +97,7 @@ app.post('/login', async (req, res) => {
   try {
     // 🔍 Check if the user exists
     const userDoc = await User.findOne({ email });
+    console.log('Found user:', jwtSecret);
 
     if (!userDoc) {
       return res.status(404).json({ error: 'User not found' });
@@ -148,8 +149,8 @@ app.get('/profile',(req,res)=>{
   if(token){
     jwt.verify(token,jwtSecret,{},async(err,userData)=>{
       if(err) throw err;
-      let {name,email,_id,role}=await User.findById(userData.id)
-      res.json({name,email,_id,role});
+      let {name,email,_id}=await User.findById(userData.id)
+      res.json({name,email,_id});
     })
   }else{
     res.json(null);
@@ -193,6 +194,9 @@ app.post('/upload', photosMiddleware.array('photos', 100), (req, res) => {
   res.json(uploadedFiles);
 });
 
+app.get('/places',async(req, res)=>{
+  res.json(await Place.find({}));
+}) 
 
 app.post('/places',async(req,res)=>{
   let {token}=req.cookies;
@@ -254,7 +258,7 @@ app.post('/bookings',async(req,res)=>{
   const {place,checkIn,checkOut,numberOfGuests,name,phone,price}=req.body;
   BookingModel.create({
     place,checkIn,checkOut,numberOfGuests,name,phone,price,
-    user:userData.id,
+    user:userData.id, 
   }).then((doc)=>{
    
     res.json(doc)
