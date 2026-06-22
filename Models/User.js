@@ -1,13 +1,17 @@
-let mongoose=require('mongoose');
-let {Schema}=mongoose;
+const mongoose = require('mongoose');
 
-let UserSchema=new mongoose.Schema(
-    {
-        name:String,
-        email:{type:String,unique:true},
-        password:String
-    }
-);
-let UserModel=mongoose.model('User',UserSchema);
+const UserSchema = new mongoose.Schema({
+  name: { type: String, required: true, trim: true },
+  email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+  password: { type: String, required: true },
+  phone: { type: String, default: '' },
+  avatar: { type: String, default: '' },
+  role: { type: String, enum: ['user', 'owner', 'admin'], default: 'user' },
+  isVerified: { type: Boolean, default: false },
+  savedHostels: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Hostel' }],
+  notifications: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Notification' }],
+  resetPasswordToken: String,
+  resetPasswordExpire: Date,
+}, { timestamps: true });
 
-module.exports=UserModel;
+module.exports = mongoose.model('User', UserSchema);
