@@ -1,5 +1,6 @@
 const Hostel = require('../Models/Hostel');
 const Room = require('../Models/Room');
+const { createNotification } = require('../utils/notificationHelper');
 
 exports.getHostels = async (req, res, next) => {
   try {
@@ -45,6 +46,15 @@ exports.getHostelById = async (req, res, next) => {
 exports.createHostel = async (req, res, next) => {
   try {
     const hostel = await Hostel.create({ ...req.body, owner: req.user._id });
+
+    await createNotification({
+      user: req.user._id,
+      title: 'Hostel Submitted for Review',
+      message: `Your hostel "${hostel.hostelName}" has been submitted and is pending admin approval.`,
+      type: 'hostel_pending',
+      hostel: hostel._id,
+    });
+
     res.status(201).json(hostel);
   } catch (err) {
     next(err);

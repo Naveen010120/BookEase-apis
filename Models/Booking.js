@@ -1,5 +1,13 @@
 const mongoose = require('mongoose');
 
+const statusHistorySchema = new mongoose.Schema({
+  status: { type: String, required: true },
+  changedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  changedByRole: { type: String },
+  note: { type: String, default: '' },
+  timestamp: { type: Date, default: Date.now },
+}, { _id: false });
+
 const BookingSchema = new mongoose.Schema({
   bookingId: { type: String, unique: true },
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
@@ -13,7 +21,7 @@ const BookingSchema = new mongoose.Schema({
   totalAmount: { type: Number, required: true },
   bookingStatus: {
     type: String,
-    enum: ['pending', 'confirmed', 'cancelled', 'completed'],
+    enum: ['pending', 'approved', 'rejected', 'cancelled', 'completed'],
     default: 'pending',
   },
   paymentStatus: {
@@ -22,6 +30,9 @@ const BookingSchema = new mongoose.Schema({
     default: 'unpaid',
   },
   paymentId: { type: String, default: '' },
+  statusHistory: [statusHistorySchema],
+  rejectionReason: { type: String, default: '' },
+  cancellationReason: { type: String, default: '' },
 }, { timestamps: true });
 
 BookingSchema.pre('save', function (next) {
@@ -30,5 +41,9 @@ BookingSchema.pre('save', function (next) {
   }
   next();
 });
+
+BookingSchema.index({ user: 1, createdAt: -1 });
+BookingSchema.index({ hostel: 1, bookingStatus: 1 });
+BookingSchema.index({ bookingId: 1 });
 
 module.exports = mongoose.model('Booking', BookingSchema);
